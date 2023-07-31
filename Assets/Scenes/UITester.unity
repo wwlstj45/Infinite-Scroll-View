@@ -594,6 +594,9 @@ MonoBehaviour:
   _quantity: 0
   _itemList: []
   _totalLength: 0
+  isGenerated: 0
+  tNum: 0
+  itemNumInViewPort: 0
 --- !u!114 &353603928
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -609,7 +612,7 @@ MonoBehaviour:
   m_Content: {fileID: 1755295572}
   m_Horizontal: 1
   m_Vertical: 0
-  m_MovementType: 1
+  m_MovementType: 0
   m_Elasticity: 0.1
   m_Inertia: 1
   m_DecelerationRate: 0.135
@@ -1364,6 +1367,9 @@ MonoBehaviour:
   _quantity: 0
   _itemList: []
   _totalLength: 0
+  isGenerated: 0
+  tNum: 0
+  itemNumInViewPort: 0
 --- !u!222 &683251773
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1900,11 +1906,11 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 244232146}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMin: {x: 0, y: 0.5}
+  m_AnchorMax: {x: 0, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_SizeDelta: {x: 1280, y: 720}
+  m_Pivot: {x: 0, y: 0.5}
 --- !u!114 &821777774
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2487,6 +2493,7 @@ MonoBehaviour:
   currentScrollRectHorizontalPosition: 0
   rightMostIndex: 0
   leftMostIndex: 0
+  rightPos: {x: 0, y: 0, z: 0}
 --- !u!114 &1185822384
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3815,6 +3822,7 @@ MonoBehaviour:
   currentScrollRectHorizontalPosition: 0
   rightMostIndex: 0
   leftMostIndex: 0
+  rightPos: {x: 0, y: 0, z: 0}
 --- !u!1 &1971204271
 GameObject:
   m_ObjectHideFlags: 0
