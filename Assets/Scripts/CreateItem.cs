@@ -17,6 +17,7 @@ public class CreateItem : MonoBehaviour
     public bool isGenerated;
     public int tNum;
     public int itemNumInViewPort;
+    public DoublyLinkedList<RectTransform> _itemCircleList = new DoublyLinkedList<RectTransform>();
 
     private void OnEnable()
     {
@@ -53,10 +54,19 @@ public class CreateItem : MonoBehaviour
             float xPos = (itemObj.GetComponent<RectTransform>().rect.width + UIController.instance.spacing) * i - (itemObj.GetComponent<RectTransform>().rect.width + UIController.instance.spacing) *2;
             itemObj.transform.localPosition = new Vector2(xPos, itemObj.transform.localPosition.y);
             itemObj.SetActive(true);
+            itemObj.gameObject.name = $"{i}";
             _itemList.Add(itemObj.GetComponent<RectTransform>());
+            _itemCircleList.Add(itemObj.GetComponent<RectTransform>());
             itemObj.GetComponentInChildren<TextMeshProUGUI>().text = (i-2).ToString();
             
         }
+        //checking for properly  linked list done
+        //int circleCount = _itemCircleList.Count();
+        //for (int i = 0; i < circleCount; i++)
+        //{
+        //    var item = _itemCircleList.Next();
+        //    Debug.Log( item.name, item);
+        //}
         UIController.instance.leftMostIndex = 0;
         UIController.instance.rightMostIndex = _itemList.Count -1;
 

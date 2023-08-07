@@ -58,7 +58,7 @@ public class UIController : MonoBehaviour
         // _scrollRect.onValueChanged.AddListener(delegate(Vector2 arg0) { ChangeDataAndScrollBarPosition();});
         
         //Move OBJ version
-        _scrollRect.onValueChanged.AddListener(ChangeCellPosition);
+        _scrollRect.onValueChanged.AddListener(ChangeCellLinkedListVersion);
         SetRecycleBounds();
 
     }
@@ -167,67 +167,111 @@ public class UIController : MonoBehaviour
         //7 8 9  | 0 1 2 3 4 5 6
         //0 1 2  | 3 4 5 6 7 8 9
 
+
+        //leftMostIdx = leftMostIdx + itemNumInViewPort
+        //but if lefMostIdx < 0
+        //then _createItem._itemList.count - leftMostIdx = leftMostIdx
         // 왜 위치가 이상해 지지?
-        //if (minCorners[0].x < viewPortMin.x)
-        //{
-        //    int tNum = 0;
-        //    int addedNum = 0;
-        //    var currnetMaxNum = int.Parse(_createItem._itemList[rightMostIndex].GetComponentInChildren<TextMeshProUGUI>().text);
-        //    for (int i = leftMostIndex; i < leftMostIndex + _createItem.itemNumInViewPort; i++)
-        //    {
-        //        ++tNum;
-        //        ++addedNum;
-        //        var targetXPos = (_createItem._itemList[rightMostIndex].anchoredPosition.x
-        //                         + (_createItem._itemList[rightMostIndex].sizeDelta.x + 30f) * tNum);
+        if (minCorners[0].x < viewPortMin.x)
+        {
+            int tNum = 0;
+            int addedNum = 0;
+            var currnetMaxNum = int.Parse(_createItem._itemList[rightMostIndex].GetComponentInChildren<TextMeshProUGUI>().text);
+            for (int i = leftMostIndex; i < leftMostIndex + _createItem.itemNumInViewPort; i++)
+            {
+                ++tNum;
+                ++addedNum;
+                var targetXPos = (_createItem._itemList[rightMostIndex].anchoredPosition.x
+                                 + (_createItem._itemList[rightMostIndex].sizeDelta.x + 30f) * tNum);
 
-        //        Vector3 targetPos = new Vector3(targetXPos, _createItem._itemList[rightMostIndex].anchoredPosition.y);
+                Vector3 targetPos = new Vector3(targetXPos, _createItem._itemList[rightMostIndex].anchoredPosition.y);
 
-        //        if (i >= _createItem._itemList.Count)
-        //        {
-        //            var num = 0 + (i - _createItem._itemList.Count);
-        //            _createItem._itemList[num].anchoredPosition = targetPos;
-        //            _createItem._itemList[num].GetComponentInChildren<TextMeshProUGUI>().text = (currnetMaxNum + addedNum).ToString();
+                if (i >= _createItem._itemList.Count)
+                {
+                    var num = 0 + (i - _createItem._itemList.Count);
+                    _createItem._itemList[num].anchoredPosition = targetPos;
+                    _createItem._itemList[num].GetComponentInChildren<TextMeshProUGUI>().text = (currnetMaxNum + addedNum).ToString();
 
-        //        }
-        //        else
-        //        {
-        //            _createItem._itemList[i].anchoredPosition = targetPos;
-        //            _createItem._itemList[i].GetComponentInChildren<TextMeshProUGUI>().text = (currnetMaxNum + addedNum).ToString();
-        //        }
+                }
+                else
+                {
+                    _createItem._itemList[i].anchoredPosition = targetPos;
+                    _createItem._itemList[i].GetComponentInChildren<TextMeshProUGUI>().text = (currnetMaxNum + addedNum).ToString();
+                }
 
 
-        //    }
-        //    // update numbers
+            }
+            // update numbers
 
-        //    SetMinAndMax();
+            SetMinAndMax();
 
-        //}
+        }
 
         if (maxCorners[2].x >viewPortMin.x)
         {
-            ++testInt;
-            Debug.Log(testInt);
-            Debug.Log(maxCorners[2].x);
-            //current Error happens due to currenly generate position.
 
-            //Set target Pos
 
-            //get right most index obj and it's nearby three objs
-            for (int i = 0; i <_createItem.itemNumInViewPort; i++)
+            var currentMinNum = int.Parse(_createItem._itemList[leftMostIndex].GetComponentInChildren<TextMeshProUGUI>().text);
+            int subNum = 0;
+            for (int i = 0; i < _createItem.itemNumInViewPort; i++)
             {
+                ++subNum;
                 var changeObjIdx = rightMostIndex - i;
+                
                 if (changeObjIdx < 0)
-                    changeObjIdx = _createItem.itemNumInViewPort - changeObjIdx;
-                float targetXPos = _createItem._itemList[leftMostIndex].anchoredPosition.x - (_createItem._itemList[leftMostIndex].rect.width + spacing) * (i+1);
+                { // 0 / 9 / 8 ==> 8/7
+                    changeObjIdx = _createItem._itemList.Count + changeObjIdx;  // don't know why this but it works
+                }
+          
+                float targetXPos = _createItem._itemList[leftMostIndex].anchoredPosition.x - (_createItem._itemList[leftMostIndex].rect.width + spacing) * (i + 1);
+                
                 Vector2 targetPos = new Vector2(targetXPos, _createItem._itemList[leftMostIndex].anchoredPosition.y);
 
+                //Debug.Log(targetPos +" / "+ _createItem._itemList[changeObjIdx].name);
                 _createItem._itemList[changeObjIdx].anchoredPosition = targetPos;
+                //이거 절대 안된다.
+                _createItem._itemList[changeObjIdx].GetComponentInChildren<TextMeshProUGUI>().text = (currentMinNum - subNum).ToString();
+
             }
             SetMinAndMax();
         }
     }
     void SetMinAndMax()
     {
+        //0 1 2  | 3 4 5 6 7 8 9
+        //3 4 5  | 6 7 8 9 0 1 2
+        //6 7 8  | 9 0 1 2 3 4 5 | 
+        //9 0 1  | 2 3 4 5 6 7 8 | 9 + 3 = 12 - 10 =2 
+        //2 3 4  | 5 6 7 8 9 0 1 
+        //5 6 7  | 8 9 0 1 2 3 4
+        //8 9 0  | 1 2 3 4 5 6 7 | 8 + 3 = 11 -10 = 1
+        //1 2 3  | 4 5 6 7 8 9 0
+        //4 5 6  | 7 8 9 0 1 2 3
+        //7 8 9  | 0 1 2 3 4 5 6
+        //0 1 2  | 3 4 5 6 7 8 9
+        //3 + 9 = 12 - 10 = 2 
+        //tlqkf ahfmrptek 
+
+
+        //setting left Most Index
+        // when scroll direction is right
+        //leftMostIndex + _viewPortNum
+        //if(leftMostIndex> _list.count)
+        // 
+        // when scroll direction is left 
+
+        //leftMostIndex += _createItem.itemNumInViewPort;
+        //if (leftMostIndex < 0)
+        //{
+        //    leftMostIndex = leftMostIndex - _createItem._itemList.Count;
+        //    Debug.Log(leftMostIndex);
+        //}
+        
+        //rightMostIndex = leftMostIndex + _createItem._itemList.Count;
+        //if (rightMostIndex > _createItem._itemList.Count - 1)
+        //    rightMostIndex = rightMostIndex - _createItem._itemList.Count;
+        //Debug.Log($"{leftMostIndex} / {rightMostIndex}");
+
         var min = _createItem._itemList.OrderBy(x => x.anchoredPosition.x).First();
         var max = _createItem._itemList.OrderByDescending(x => x.anchoredPosition.x).First();
         for (int i = 0; i < _createItem._itemList.Count; i++)
@@ -241,6 +285,73 @@ public class UIController : MonoBehaviour
                 rightMostIndex = i;
             }
         }
+        Debug.Log($"<color=red>{leftMostIndex}/{rightMostIndex} </color>");
+    }
+    void ChangeCellLinkedListVersion(Vector2 normalizedPos)
+    {
+        Vector3[] corners = new Vector3[4];
+        _scrollRect.viewport.GetWorldCorners(corners);
+        //left 
+        Vector3[] leftCellCorners = new Vector3[4];
+        var leftObj = _createItem._itemCircleList.GetObjectFromRoot(3);
+        leftObj.GetWorldCorners(leftCellCorners);
+        //right
+        Vector3[] rightCellCorners = new Vector3[4];
+        var rightObj = _createItem._itemCircleList.GetObjectFromTail(2);
+        rightObj.GetWorldCorners(rightCellCorners);
+
+        if (rightCellCorners[0].x < viewPortMax.x)
+        {
+            int addedNum = 0;
+            //var currnetMaxNum = int.Parse(_createItem._itemList[rightMostIndex].GetComponentInChildren<TextMeshProUGUI>().text);
+            var currentMaxNum = int.Parse(_createItem._itemCircleList.GetObjectFromTail().GetComponentInChildren<TextMeshProUGUI>().text);
+            //Debug.Log(currentMaxNum, _createItem._itemCircleList.GetObjectFromTail());
+            for (int i = leftMostIndex; i < leftMostIndex + _createItem.itemNumInViewPort; i++)
+            {
+                ++addedNum;
+                var targetXPos = (_createItem._itemCircleList.GetObjectFromTail().anchoredPosition.x
+                                 + (_createItem._itemCircleList.GetObjectFromTail().sizeDelta.x + 30f));
+
+                Vector3 targetPos = new Vector3(targetXPos, _createItem._itemCircleList.GetObjectFromTail().anchoredPosition.y);
+                //Debug.Log($"Target Position : <color=green>{targetPos}</color>");
+
+                //let's left modst object should go to right and so on
+                //Debug.Log($"Most Right Obj:<color=red> {_createItem._itemCircleList.root.prev.value.name}</color>", _createItem._itemCircleList.root.prev.value);
+                //Debug.Log($"Most Left OBJ :<color=cyan> {_createItem._itemCircleList.root.next.value.name}</color>", _createItem._itemCircleList.root.next.value);
+                _createItem._itemCircleList.root.value.GetComponentInChildren<TextMeshProUGUI>().text = (currentMaxNum + addedNum).ToString();
+                _createItem._itemCircleList.root.value.anchoredPosition = targetPos;
+                _createItem._itemCircleList.tail = _createItem._itemCircleList.root;
+                _createItem._itemCircleList.root = _createItem._itemCircleList.root.next;
+            }
+        }
+
+        //this might be wrong
+        if (leftCellCorners[2].x > viewPortMin.x)
+        {
+
+
+            var currentMinNum = int.Parse(_createItem._itemCircleList.GetObjectFromRoot().GetComponentInChildren<TextMeshProUGUI>().text);
+            int subNum = 0;
+            for (int i = 0; i < _createItem.itemNumInViewPort; i++)
+            {
+                ++subNum;
+                //left Most X position
+                float targetXPos = _createItem._itemCircleList.GetObjectFromRoot().anchoredPosition.x - (_createItem._itemCircleList.GetObjectFromRoot().rect.width + spacing);
+
+                //targetPosition 
+                Vector2 targetPos = new Vector2(targetXPos, _createItem._itemCircleList.GetObjectFromRoot().anchoredPosition.y);
+
+                //change right Most cell to target position
+                _createItem._itemCircleList.GetObjectFromTail().anchoredPosition = targetPos;
+                //change right Most cell's Data
+                _createItem._itemCircleList.GetObjectFromTail().GetComponentInChildren<TextMeshProUGUI>().text = (currentMinNum - subNum).ToString();
+
+                //change tail
+                _createItem._itemCircleList.root = _createItem._itemCircleList.root.prev;
+                _createItem._itemCircleList.tail = _createItem._itemCircleList.tail.prev; 
+            }
+        }
+
     }
     private void OnDrawGizmos()
     {
