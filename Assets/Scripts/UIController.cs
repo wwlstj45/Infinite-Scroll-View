@@ -10,6 +10,12 @@ using UnityEngine.UI;
 
 public class UIController : MonoBehaviour
 {
+    public enum Direction
+    {
+        Horizontal,
+        Vertical
+    }
+    public Direction _direction;
     public static UIController instance;
     [SerializeField]
     private Button _generateBtn;
@@ -31,8 +37,13 @@ public class UIController : MonoBehaviour
 
     private Vector2 viewPortMin;
     private Vector2 viewPortMax;
+    Vector2 _prevContentPos = Vector2.zero;
+    
+    public Vector2 MaxViewPort => viewPortMax;
     public Vector3 rightPos;
     public float spacing= 30f;
+    
+
     int testInt=0;
 
 
@@ -49,26 +60,58 @@ public class UIController : MonoBehaviour
         Application.targetFrameRate = 35;
         _generateBtn.onClick.AddListener(Onbutton_GenerateClicked);
         _QuantityInputField.onValueChanged.AddListener(delegate (string arg0) { SetQuantity(); });
+        SetData();
+    }
+    void SetData()
+    {
+        switch (_direction)
+        {
+            case Direction.Horizontal:
+                var _itemRectWith = _createItem._itemPf.GetComponent<RectTransform>().rect.width + 10f;
+                _createItem._totalItemCnt = Mathf.CeilToInt(_scrollRect.viewport.rect.width / _itemRectWith);
 
-        
-        var _itemRectWith = _createItem._itemPf.GetComponent<RectTransform>().rect.width + 10f;
-        _createItem._totalItemCnt = Mathf.CeilToInt(_scrollRect.viewport.rect.width / _itemRectWith);
+                _scrollRect.onValueChanged.AddListener(HorizontalChangeCellLinkedList);
+                
+                //set scroll direction
+                _scrollRect.horizontal = true;
+                _scrollRect.vertical = false;
 
-        //move Scrollbar version
-        // _scrollRect.onValueChanged.AddListener(delegate(Vector2 arg0) { ChangeDataAndScrollBarPosition();});
-        
-        //Move OBJ version
-        _scrollRect.onValueChanged.AddListener(ChangeCellLinkedListVersion);
-        SetRecycleBounds();
+                SetHorizontalRecycleBounds();
+                break;
 
+            case Direction.Vertical:
+                var _itemRectheight = _createItem._itemPf.GetComponent<RectTransform>().rect.height + 10f;
+                _createItem._totalItemCnt = Mathf.CeilToInt(_scrollRect.viewport.rect.height / _itemRectheight);
+
+                _scrollRect.onValueChanged.AddListener(VerticalChangeCellLinkedList);
+                //set scroll direction
+                _scrollRect.horizontal = false;
+                _scrollRect.vertical = true;
+                SetVerticalRecycleBounds();
+                break;
+        }
     }
 
-    private void SetRecycleBounds()
+    private void SetHorizontalRecycleBounds()
     {
         _scrollRect.viewport.GetWorldCorners(fourConers);
         var threshold = 2f * (fourConers[0].x + fourConers[2].x);
+        //if Horizontal
         viewPortMax = new Vector2(fourConers[2].x + threshold, fourConers[2].y);
         viewPortMin = new Vector2(fourConers[0].x - threshold, fourConers[0].y);
+    }
+    void SetVerticalRecycleBounds()
+    {
+        _scrollRect.viewport.GetWorldCorners(fourConers);
+        var threshold = 0f;
+        //if(_direction == Direction.Horizontal)
+        //    threshold = 2f * (fourConers[0].x + fourConers[2].x);
+        //else if(_direction == Direction.Vertical)
+        //    threshold = 2f*(fourConers[0].y + fourConers[2].y);
+
+        //if Vertical
+        viewPortMax = new Vector2(fourConers[2].x, fourConers[2].y);
+        viewPortMin = new Vector2(fourConers[0].x, fourConers[0].y);
     }
 
 
@@ -287,20 +330,23 @@ public class UIController : MonoBehaviour
         }
         Debug.Log($"<color=red>{leftMostIndex}/{rightMostIndex} </color>");
     }
-    void ChangeCellLinkedListVersion(Vector2 normalizedPos)
+    void HorizontalChangeCellLinkedList(Vector2 normalizedPos)
     {
         Vector3[] corners = new Vector3[4];
         _scrollRect.viewport.GetWorldCorners(corners);
         //left 
         Vector3[] leftCellCorners = new Vector3[4];
-        var leftObj = _createItem._itemCircleList.GetObjectFromRoot(3);
+        var leftObj = _createItem._itemCircleList.GetObjectFromRoot(_createItem.itemNumInViewPort +1);
         leftObj.GetWorldCorners(leftCellCorners);
         //right
         Vector3[] rightCellCorners = new Vector3[4];
-        var rightObj = _createItem._itemCircleList.GetObjectFromTail(2);
+        var rightObj = _createItem._itemCircleList.GetObjectFromTail(_createItem.itemNumInViewPort + 1);
         rightObj.GetWorldCorners(rightCellCorners);
 
-        if (rightCellCorners[0].x < viewPortMax.x)
+        var scrollDir=_scrollRect.content.anchoredPosition - _prevContentPos;
+        _prevContentPos = _scrollRect.content.anchoredPosition;
+
+        if (scrollDir.x < 0 && leftCellCorners[2].x < viewPortMin.x)
         {
             int addedNum = 0;
             //var currnetMaxNum = int.Parse(_createItem._itemList[rightMostIndex].GetComponentInChildren<TextMeshProUGUI>().text);
@@ -326,7 +372,7 @@ public class UIController : MonoBehaviour
         }
 
         //this might be wrong
-        if (leftCellCorners[2].x > viewPortMin.x)
+        if (scrollDir.x > 0 && rightCellCorners[0].x > viewPortMax.x)
         {
 
 
@@ -349,6 +395,102 @@ public class UIController : MonoBehaviour
                 //change tail
                 _createItem._itemCircleList.root = _createItem._itemCircleList.root.prev;
                 _createItem._itemCircleList.tail = _createItem._itemCircleList.tail.prev; 
+            }
+        }
+
+    }
+
+    //need to move direction first
+    void VerticalChangeCellLinkedList(Vector2 normalizedPos)
+    {
+
+        //get corenrs
+        Vector3[] corners = new Vector3[4];
+        _scrollRect.viewport.GetWorldCorners(corners);
+        //left 
+        Vector3[] topCellCorners = new Vector3[4];
+        var topObj = _createItem._itemCircleList.GetObjectFromRoot(_createItem.itemNumInViewPort +1);
+        topObj.GetWorldCorners(topCellCorners);
+        //right
+        Vector3[] buttomCellCorners = new Vector3[4];
+        var buttomObj = _createItem._itemCircleList.GetObjectFromTail(_createItem.itemNumInViewPort + 1);
+        buttomObj.GetWorldCorners(buttomCellCorners);
+
+        //Debug.Log(_scrollRect.content.anchoredPosition);
+
+        //check direction
+
+        var scrolldirection = _scrollRect.content.anchoredPosition - _prevContentPos;
+        _prevContentPos = _scrollRect.content.anchoredPosition;
+
+        //check scroll direction but how?
+
+        //moving down
+        if (scrolldirection.y>0&&topCellCorners[0].y > viewPortMax.y)
+        {
+            Debug.Log($"<color=red>{buttomCellCorners[0].y} / {viewPortMax.y} = {DateTime.Now}</color>");
+            //current slot / slot's threshold 
+            int addedNum = 0;
+            //var currnetMaxNum = int.Parse(_createItem._itemList[rightMostIndex].GetComponentInChildren<TextMeshProUGUI>().text);
+            var currentMaxNum = int.Parse(_createItem._itemCircleList.GetObjectFromTail().GetComponentInChildren<TextMeshProUGUI>().text);
+            //Debug.Log(currentMaxNum, _createItem._itemCircleList.GetObjectFromTail());
+            for (int i = 0; i < _createItem.itemNumInViewPort; i++)
+            {
+                ++addedNum;
+                //int sign = 0;
+
+                //if (_createItem._itemCircleList.GetObjectFromTail().anchoredPosition.y < 0)
+                //    sign = -1;
+                //else
+                //    sign = 1;
+
+                //var targetYPos = Mathf.Abs(_createItem._itemCircleList.GetObjectFromTail().anchoredPosition.y) + (Mathf.Abs(_createItem._itemCircleList.GetObjectFromTail().sizeDelta.y) + 30f);
+                var targetYPos = _createItem._itemCircleList.GetObjectFromTail().anchoredPosition.y - (_createItem._itemCircleList.GetObjectFromTail().sizeDelta.y + 30f);
+                //how to check it it should be negative or positive... 
+
+                //Vector3 targetPos = new Vector3(_createItem._itemCircleList.GetObjectFromTail().anchoredPosition.x, targetYPos * sign);
+                Vector3 targetPos = new Vector3(_createItem._itemCircleList.GetObjectFromTail().anchoredPosition.x, targetYPos);
+
+                //set data
+                _createItem._itemCircleList.root.value.GetComponentInChildren<TextMeshProUGUI>().text = (currentMaxNum + addedNum).ToString();
+
+                //change Position
+                _createItem._itemCircleList.root.value.anchoredPosition = targetPos;
+
+                //chagne Pointers;
+                _createItem._itemCircleList.tail = _createItem._itemCircleList.root;
+                _createItem._itemCircleList.root = _createItem._itemCircleList.root.next;
+            }
+        }
+
+
+        //moving up
+        if (scrolldirection.y<0 && buttomCellCorners[2].y < viewPortMin.y)
+        {
+            Debug.Log($"<color=cyan>{buttomCellCorners[2].y} / {viewPortMin.y} = {DateTime.Now}</color>");
+            var currentMinNum = int.Parse(_createItem._itemCircleList.GetObjectFromRoot().GetComponentInChildren<TextMeshProUGUI>().text);
+            int subNum = 0;
+            for (int i = 0; i < _createItem.itemNumInViewPort; i++)
+            {
+                ++subNum;
+
+                int sign = 1;
+                //sign = _createItem._itemCircleList.GetObjectFromRoot().anchoredPosition.y > 0 ? sign = 1 : sign = -1;
+                //left Most X position
+                //most upper position + height + space amount 
+                float targetYPos = _createItem._itemCircleList.GetObjectFromRoot().anchoredPosition.y + (_createItem._itemCircleList.GetObjectFromRoot().rect.height + 30f);
+
+                //targetPosition 
+                Vector2 targetPos = new Vector2(_createItem._itemCircleList.GetObjectFromRoot().anchoredPosition.x, targetYPos);
+
+                //change right Most cell to target 
+                _createItem._itemCircleList.GetObjectFromTail().anchoredPosition = targetPos;
+                //change right Most cell's Data
+                _createItem._itemCircleList.GetObjectFromTail().GetComponentInChildren<TextMeshProUGUI>().text = (currentMinNum - subNum).ToString();
+
+                //change tail
+                _createItem._itemCircleList.root = _createItem._itemCircleList.root.prev;
+                _createItem._itemCircleList.tail = _createItem._itemCircleList.tail.prev;
             }
         }
 
